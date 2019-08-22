@@ -1,12 +1,12 @@
 steps:
     # build the container image
-    - name: 'eu.gcr.io/cloud-builders/docker'
+    - name: 'gcr.io/cloud-builders/docker'
       args: ['build', '-f', '.devops/docker/Dockerfile', '-t', 'eu.gcr.io/wonderkind-testing/laravel-cloud-run', '.']
         # push the container image to Container Registry
-    - name: 'eu.gcr.io/cloud-builders/docker'
+    - name: 'gcr.io/cloud-builders/docker'
       args: ['push', 'eu.gcr.io/wonderkind-testing/laravel-cloud-run']
         # Deploy container image to Cloud Run
-    - name: 'eu.gcr.io/cloud-builders/gcloud'
+    - name: 'gcr.io/cloud-builders/gcloud'
       args: ['beta', 'run', 'deploy', 'laravel-cloud-run', '--image', 'eu.gcr.io/wonderkind-testing/laravel-cloud-run', '--region', 'europe-west1','--platform', 'managed', '--quiet']
 images:
     - eu.gcr.io/wonderkind-testing/laravel-cloud-run
