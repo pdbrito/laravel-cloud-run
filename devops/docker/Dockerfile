@@ -63,14 +63,14 @@ RUN chmod +x /opt/bin/entrypoint.sh
 CMD ["/opt/bin/entrypoint.sh"]
 
 COPY . /var/www/html
-COPY --chown=nobody --from=composer vendor /var/www/html/vendor/
-COPY --chown=nobody --from=composer:latest /usr/bin/composer /usr/bin/composer
-COPY --chown=nobody --from=yarn-build /app/public/js /var/www/html/public/js/
-COPY --chown=nobody --from=yarn-build /app/public/css /var/www/html/public/css/
-COPY --chown=nobody --from=yarn-build /app/mix-manifest.json /var/www/html/mix-manifest.json
+COPY --from=composer vendor /var/www/html/vendor/
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=yarn-build /app/public/js /var/www/html/public/js/
+COPY --from=yarn-build /app/public/css /var/www/html/public/css/
+COPY --from=yarn-build /app/mix-manifest.json /var/www/html/mix-manifest.json
 
-RUN composer dump-autoload --optimize --classmap-authoritative
-RUN php artisan view:cache
-RUN chown -R nobody /var/www/html/storage/
+RUN composer dump-autoload --optimize --classmap-authoritative \
+    && php artisan view:cache \
+    && chown -R nobody /var/www/html/storage/
 
 USER nobody
