@@ -55,6 +55,7 @@ COPY ./devops/docker/config/nginx.conf /etc/nginx/nginx.conf
 # Application
 # Rebuilt if php source files change
 FROM php-nginx
+USER root
 
 COPY ./devops/docker/entrypoint.sh /opt/bin/entrypoint.sh
 
@@ -73,4 +74,3 @@ RUN composer dump-autoload --optimize --classmap-authoritative \
     && php artisan view:cache \
     && chown -R nobody /var/www/html/storage/
 
-USER nobody
