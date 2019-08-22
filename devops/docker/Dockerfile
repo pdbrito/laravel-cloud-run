@@ -56,8 +56,6 @@ COPY ./devops/docker/config/nginx.conf /etc/nginx/nginx.conf
 # Rebuilt if php source files change
 FROM php-nginx
 
-USER nobody
-
 COPY ./devops/docker/entrypoint.sh /opt/bin/entrypoint.sh
 
 RUN chmod +x /opt/bin/entrypoint.sh
@@ -72,3 +70,7 @@ COPY --from=yarn-build /app/public/css /var/www/html/public/css/
 COPY --from=yarn-build /app/mix-manifest.json /var/www/html/mix-manifest.json
 
 RUN composer dump-autoload --optimize --classmap-authoritative
+RUN php artisan view:cache
+RUN chown -R nobody /var/www/html/storage/
+
+USER nobody
