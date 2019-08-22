@@ -2,7 +2,6 @@ steps:
     # build the container image with cache
     - name: 'gcr.io/kaniko-project/executor:latest'
       args: ['--dockerfile=devops/docker/Dockerfile',
-             '--context=.',
              '--destination=gcr.io/wonderkind-testing/laravel-cloud-run',
              '--cache=true',
              '--cache-ttl=18h']
