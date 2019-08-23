@@ -72,6 +72,12 @@ COPY --chown=nobody:nobody --from=yarn-build /app/mix-manifest.json /var/www/htm
 RUN chown -R nobody:nobody /var/www/html/bootstrap/cache
 RUN chown -R nobody:nobody /var/www/html/storage/
 
-RUN composer dump-autoload --optimize --classmap-authoritative --verbose
+RUN composer install \
+    --ignore-platform-reqs \
+    --no-interaction \
+    --no-scripts \
+    --prefer-dist \
+    --no-dev \
+    --verbose
 
 USER nobody
