@@ -46,15 +46,15 @@ RUN yarn production
 #
 # PHP, Nginx and Supervisord configuration
 # Rebuilt if configuration files change
-FROM trafex/alpine-nginx-php7:1.2.0 AS php-nginx
-USER root
+FROM pdbrito/alpine-php-nginx AS php-nginx
 RUN apk add --no-cache php7-pcntl php7-bcmath php7-pdo php7-pdo_mysql php7-tokenizer
-COPY ./devops/docker/config/nginx.conf /etc/nginx/nginx.conf
 
 #
 # Application
 # Rebuilt if php source files change
 FROM php-nginx
+
+WORKDIR /var/www/html
 
 COPY ./devops/docker/entrypoint.sh /opt/bin/entrypoint.sh
 
@@ -62,19 +62,11 @@ RUN chmod +x /opt/bin/entrypoint.sh
 
 CMD ["/opt/bin/entrypoint.sh"]
 
-COPY --chown=nobody:nobody . /var/www/html
-COPY --chown=nobody:nobody --from=composer-deps vendor /var/www/html/vendor/
-COPY --chown=nobody:nobody --from=composer:latest /usr/bin/composer /usr/bin/composer
-COPY --chown=nobody:nobody --from=yarn-build /app/public/js /var/www/html/public/js/
-COPY --chown=nobody:nobody --from=yarn-build /app/public/css /var/www/html/public/css/
-COPY --chown=nobody:nobody --from=yarn-build /app/mix-manifest.json /var/www/html/mix-manifest.json
-
-RUN chown -R nobody:nobody /var/www/html/bootstrap/cache
-RUN chown -R nobody:nobody /var/www/html/storage/
-
-RUN mkdir /var/www/html/vendor/
-RUN chown -R nobody:nobody /var/www/html/vendor/
-
-USER nobody
+COPY . /var/www/html
+COPY --from=composer-deps vendor /var/www/html/vendor/
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=yarn-build /app/public/js /var/www/html/public/js/
+COPY --from=yarn-build /app/public/css /var/www/html/public/css/
+COPY --from=yarn-build /app/mix-manifest.json /var/www/html/mix-manifest.json
 
 RUN composer dump-autoload --optimize --classmap-authoritative --verbose
