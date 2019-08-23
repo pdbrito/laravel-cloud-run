@@ -48,6 +48,7 @@ RUN yarn production
 # Rebuilt if configuration files change
 FROM pdbrito/alpine-php-nginx AS php-nginx
 RUN apk add --no-cache php7-pcntl php7-bcmath php7-pdo php7-pdo_mysql php7-tokenizer
+COPY ./devops/docker/config/fpm-pool.conf /etc/php7/php-fpm.d/www.conf
 
 #
 # Application
@@ -69,4 +70,5 @@ COPY --from=yarn-build /app/public/js /var/www/html/public/js/
 COPY --from=yarn-build /app/public/css /var/www/html/public/css/
 COPY --from=yarn-build /app/mix-manifest.json /var/www/html/mix-manifest.json
 
-RUN composer dump-autoload --optimize --classmap-authoritative --verbose
+RUN composer dump-autoload --optimize --classmap-authoritative --verbose \
+    && chown -R nobody /var/www/html/storage/
