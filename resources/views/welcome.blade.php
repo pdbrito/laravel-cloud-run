@@ -81,7 +81,7 @@
 
             <div class="content">
                 <div class="title m-b-md">
-                    Laravel
+                    Laravel on Google Cloud Run!
                 </div>
 
                 <div class="links">
