@@ -74,4 +74,6 @@ RUN chown -R nobody:nobody /var/www/html/storage/
 
 USER nobody
 
+RUN mkdir /var/www/html/vendor/
+
 RUN composer dump-autoload --optimize --classmap-authoritative --verbose
