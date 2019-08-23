@@ -1,7 +1,7 @@
 #
 # PHP dependencies - composer install
 # Rebuilt if composer dependencies change
-FROM php:7.3-cli-alpine as composer
+FROM php:7.3-cli-alpine as composer-deps
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer global require hirak/prestissimo
 
@@ -63,7 +63,7 @@ RUN chmod +x /opt/bin/entrypoint.sh
 CMD ["/opt/bin/entrypoint.sh"]
 
 COPY --chown=nobody:nobody . /var/www/html
-COPY --chown=nobody:nobody --from=composer vendor /var/www/html/vendor/
+COPY --chown=nobody:nobody --from=composer-deps vendor /var/www/html/vendor/
 COPY --chown=nobody:nobody --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY --chown=nobody:nobody --from=yarn-build /app/public/js /var/www/html/public/js/
 COPY --chown=nobody:nobody --from=yarn-build /app/public/css /var/www/html/public/css/
