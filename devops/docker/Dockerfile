@@ -63,14 +63,15 @@ RUN chmod +x /opt/bin/entrypoint.sh
 CMD ["/opt/bin/entrypoint.sh"]
 
 COPY . /var/www/html
-COPY --from=composer vendor /var/www/html/vendor/
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-COPY --from=yarn-build /app/public/js /var/www/html/public/js/
-COPY --from=yarn-build /app/public/css /var/www/html/public/css/
-COPY --from=yarn-build /app/mix-manifest.json /var/www/html/mix-manifest.json
+COPY --chown=nobody:nobody --from=composer vendor /var/www/html/vendor/
+COPY --chown=nobody:nobody --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --chown=nobody:nobody --from=yarn-build /app/public/js /var/www/html/public/js/
+COPY --chown=nobody:nobody --from=yarn-build /app/public/css /var/www/html/public/css/
+COPY --chown=nobody:nobody --from=yarn-build /app/mix-manifest.json /var/www/html/mix-manifest.json
 
-RUN composer dump-autoload --optimize --classmap-authoritative \
-    && php artisan view:cache \
-    && chown -R nobody /var/www/html/storage/
+RUN chown -R nobody:nobody /var/www/html/bootstrap/cache \
+    && chown -R nobody:nobody /var/www/html/storage/ \
+    && composer dump-autoload --optimize --classmap-authoritative \
+    && php artisan view:cache
 
 USER nobody
