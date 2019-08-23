@@ -1,7 +1,7 @@
 #
 # PHP dependencies - composer install
 # Rebuilt if composer dependencies change
-FROM php:7.3-cli-alpine as composer-deps
+FROM php:7.3-cli-alpine AS composer-deps
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer global require hirak/prestissimo
 
@@ -20,7 +20,7 @@ RUN composer install \
 #
 # JS dependencies - yarn install
 # Rebuilt if javascript dependencies change
-FROM node:lts-alpine as yarn-install
+FROM node:lts-alpine AS yarn-install
 
 WORKDIR /app
 
@@ -31,7 +31,7 @@ RUN yarn install
 #
 # JS build - yarn production
 # Rebuilt if javascript source files change
-FROM yarn-install as yarn-build
+FROM yarn-install AS yarn-build
 
 WORKDIR /app
 
@@ -46,7 +46,7 @@ RUN yarn production
 #
 # PHP, Nginx and Supervisord configuration
 # Rebuilt if configuration files change
-FROM trafex/alpine-nginx-php7:1.2.0 as php-nginx
+FROM trafex/alpine-nginx-php7:1.2.0 AS php-nginx
 USER root
 RUN apk add --no-cache php7-pcntl php7-bcmath php7-pdo php7-pdo_mysql php7-tokenizer
 COPY ./devops/docker/config/nginx.conf /etc/nginx/nginx.conf
