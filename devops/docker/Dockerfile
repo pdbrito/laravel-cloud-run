@@ -64,6 +64,9 @@ COPY ./devops/docker/config/www.conf /usr/local/etc/php-fpm.d/www.conf
 # Configure php
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
+# Configure opcache
+COPY ./devops/docker/config/opcache.ini "$PHP_INI_DIR/conf.d/opcache.ini"
+
 # Expose the port nginx is reachable on
 EXPOSE 8080
 
