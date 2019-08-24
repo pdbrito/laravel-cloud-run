@@ -84,6 +84,11 @@
                     Laravel on Google Cloud Run!
                 </div>
 
+                @if(!empty(env('K_SERVICE')))
+                    <p>You've reached: {{ env('K_SERVICE') }}</p>
+                    <p>Current revision: {{ env('K_REVISION') }}</p>
+                @endif
+
                 <div class="links">
                     <a href="https://laravel.com/docs">Docs</a>
                     <a href="https://laracasts.com">Laracasts</a>
