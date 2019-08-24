@@ -46,9 +46,30 @@ RUN yarn production
 #
 # PHP, Nginx and Supervisord configuration
 # Rebuilt if configuration files change
-FROM pdbrito/alpine-php-nginx AS php-nginx
-RUN apk add --no-cache php7-pcntl php7-bcmath php7-pdo php7-pdo_mysql php7-tokenizer
-COPY ./devops/docker/config/fpm-pool.conf /etc/php7/php-fpm.d/www.conf
+FROM php:7.3-fpm-alpine AS php-nginx
+
+RUN docker-php-ext-install bcmath pcntl pdo pdo_mysql opcache
+
+RUN apk --no-cache add nginx supervisor curl
+
+# Configure supervisord
+COPY ./devops/docker/config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Configure nginx
+COPY ./devops/docker/config/nginx.conf /etc/nginx/nginx.conf
+
+# Configure php-fpm
+COPY ./devops/docker/config/www.conf /usr/local/etc/php-fpm.d/www.conf
+
+# Configure php
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+# Expose the port nginx is reachable on
+EXPOSE 8080
+
+# Let supervisord start nginx & php-fpm
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+
 
 #
 # Docker entrypoint
@@ -76,4 +97,4 @@ COPY --from=yarn-build /app/public/css /var/www/html/public/css/
 COPY --from=yarn-build /app/mix-manifest.json /var/www/html/mix-manifest.json
 
 RUN composer dump-autoload --optimize --classmap-authoritative --verbose \
-    && chown -R nobody /var/www/html/storage/
+    && chown -R www-data /var/www/html/storage/
