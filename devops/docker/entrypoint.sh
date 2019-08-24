@@ -4,9 +4,11 @@ set -e
 
 role=${CONTAINER_ROLE:-app}
 env=${APP_ENV:-production}
+port=${PORT:-8080}
 
 if [[ "$role" = "app" ]]; then
 
+    sed -i "s/\$PORT/$port/g" /etc/nginx/nginx.conf
     exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 
 elif [[ "$role" = "worker" ]]; then
