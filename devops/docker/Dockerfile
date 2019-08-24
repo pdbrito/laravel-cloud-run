@@ -51,9 +51,10 @@ RUN apk add --no-cache php7-pcntl php7-bcmath php7-pdo php7-pdo_mysql php7-token
 COPY ./devops/docker/config/fpm-pool.conf /etc/php7/php-fpm.d/www.conf
 
 #
-# Application
-# Rebuilt if php source files change
-FROM php-nginx
+# Docker entrypoint
+# Rebuilt if our entrypoint script changes
+FROM php-nginx as entrypoint
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
@@ -63,9 +64,13 @@ RUN chmod +x /opt/bin/entrypoint.sh
 
 CMD ["/opt/bin/entrypoint.sh"]
 
+#
+# Application
+# Rebuilt if php source files change
+FROM entrypoint as application
+
 COPY . /var/www/html
 COPY --from=composer-deps vendor /var/www/html/vendor/
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY --from=yarn-build /app/public/js /var/www/html/public/js/
 COPY --from=yarn-build /app/public/css /var/www/html/public/css/
 COPY --from=yarn-build /app/mix-manifest.json /var/www/html/mix-manifest.json
