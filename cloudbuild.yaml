@@ -1,12 +1,135 @@
 steps:
-    # build the container image
     -   name: 'gcr.io/cloud-builders/docker'
-        args: ['build', '-f', 'devops/docker/Dockerfile', '-t', 'gcr.io/wonderkind-testing/laravel-cloud-run:cloud-build', '.']
-    # push the container image to Container Registry
+        entrypoint: 'bash'
+        args:
+            - '-c'
+            - |
+                docker pull gcr.io/$PROJECT_ID/laravel-cloud-run:composer-deps || exit 0
+        id: 'pull-composer-deps'
+        waitFor: ['-']
+
     -   name: 'gcr.io/cloud-builders/docker'
-        args: ['push', 'gcr.io/wonderkind-testing/laravel-cloud-run:cloud-build']
+        args: [
+            'build',
+            '-f', 'devops/docker/Dockerfile',
+            '--target', 'composer-deps',
+            '--cache-from', 'gcr.io/$PROJECT_ID/[IMAGE_NAME]:composer-deps',
+            '-t', 'gcr.io/$PROJECT_ID/laravel-cloud-run:composer-deps',
+            '.'
+        ]
+        id: 'build-composer-deps'
+        waitFor: ['pull-composer-deps']
+
+    -   name: 'gcr.io/cloud-builders/docker'
+        entrypoint: 'bash'
+        args:
+            - '-c'
+            - |
+                docker pull gcr.io/$PROJECT_ID/laravel-cloud-run:yarn-install || exit 0
+        id: 'pull-yarn-install'
+        waitFor: ['-']
+
+    -   name: 'gcr.io/cloud-builders/docker'
+        args: [
+            'build',
+            '-f', 'devops/docker/Dockerfile',
+            '--target', 'yarn-install',
+            '--cache-from', 'gcr.io/$PROJECT_ID/[IMAGE_NAME]:yarn-install',
+            '-t', 'gcr.io/$PROJECT_ID/laravel-cloud-run:yarn-install',
+            '.'
+        ]
+        id: 'build-yarn-install'
+        waitFor: ['pull-yarn-install']
+
+    -   name: 'gcr.io/cloud-builders/docker'
+        entrypoint: 'bash'
+        args:
+            - '-c'
+            - |
+                docker pull gcr.io/$PROJECT_ID/laravel-cloud-run:yarn-build || exit 0
+        id: 'pull-yarn-build'
+        waitFor: ['build-yarn-install']
+
+    -   name: 'gcr.io/cloud-builders/docker'
+        args: [
+            'build',
+            '-f', 'devops/docker/Dockerfile',
+            '--target', 'yarn-build',
+            '--cache-from', 'gcr.io/$PROJECT_ID/[IMAGE_NAME]:yarn-build',
+            '-t', 'gcr.io/$PROJECT_ID/laravel-cloud-run:yarn-build',
+            '.'
+        ]
+        id: 'build-yarn-build'
+        waitFor: ['pull-yarn-build']
+
+    -   name: 'gcr.io/cloud-builders/docker'
+        entrypoint: 'bash'
+        args:
+            - '-c'
+            - |
+                docker pull gcr.io/$PROJECT_ID/laravel-cloud-run:php-apache || exit 0
+        id: 'pull-php-apache'
+        waitFor: ['-']
+
+    -   name: 'gcr.io/cloud-builders/docker'
+        args: [
+            'build',
+            '-f', 'devops/docker/Dockerfile',
+            '--target', 'php-apache',
+            '--cache-from', 'gcr.io/$PROJECT_ID/[IMAGE_NAME]:php-apache',
+            '-t', 'gcr.io/$PROJECT_ID/laravel-cloud-run:php-apache',
+            '.'
+        ]
+        id: 'build-php-apache'
+        waitFor: ['pull-php-apache']
+
+
+    -   name: 'gcr.io/cloud-builders/docker'
+        entrypoint: 'bash'
+        args:
+            - '-c'
+            - |
+                docker pull gcr.io/$PROJECT_ID/laravel-cloud-run:entrypoint || exit 0
+        id: 'pull-entrypoint'
+        waitFor: ['build-php-apache']
+
+    -   name: 'gcr.io/cloud-builders/docker'
+        args: [
+            'build',
+            '-f', 'devops/docker/Dockerfile',
+            '--target', 'entrypoint',
+            '--cache-from', 'gcr.io/$PROJECT_ID/[IMAGE_NAME]:entrypoint',
+            '-t', 'gcr.io/$PROJECT_ID/laravel-cloud-run:entrypoint',
+            '.'
+        ]
+        id: 'build-entrypoint'
+        waitFor: ['pull-entrypoint']
+
+    -   name: 'gcr.io/cloud-builders/docker'
+        args: [
+            'build',
+            '-f', 'devops/docker/Dockerfile',
+            '--cache-from', 'gcr.io/$PROJECT_ID/[IMAGE_NAME]:yarn-build',
+            '--cache-from', 'gcr.io/$PROJECT_ID/[IMAGE_NAME]:composer-deps',
+            '--cache-from', 'gcr.io/$PROJECT_ID/[IMAGE_NAME]:entrypoint',
+            '-t', 'gcr.io/$PROJECT_ID/laravel-cloud-run:cloud-build',
+            '.'
+        ]
+        id: 'build'
+        waitFor: ['build-entrypoint','build-yarn-build','build-composer-deps']
+
+    -   name: 'gcr.io/cloud-builders/docker'
+        args: ['push', 'gcr.io/$PROJECT_ID/laravel-cloud-run:cloud-build']
+        waitFor: ['build']
+
     # Deploy container image to Cloud Run
     -   name: 'gcr.io/cloud-builders/gcloud'
-        args: ['beta', 'run', 'deploy', 'laravel-cloud-run', '--image', 'gcr.io/wonderkind-testing/laravel-cloud-run:cloud-build', '--region', 'europe-west1','--platform', 'managed', '--quiet']
-images:
-    - gcr.io/wonderkind-testing/laravel-cloud-run:cloud-build
+        args: ['beta', 'run', 'deploy', 'laravel-cloud-run', '--image', 'gcr.io/$PROJECT_ID/laravel-cloud-run:cloud-build', '--region', 'europe-west1','--platform', 'managed', '--quiet']
+images: [
+    'gcr.io/$PROJECT_ID/laravel-cloud-run:composer-deps',
+    'gcr.io/$PROJECT_ID/laravel-cloud-run:yarn-install',
+    'gcr.io/$PROJECT_ID/laravel-cloud-run:yarn-build',
+    'gcr.io/$PROJECT_ID/laravel-cloud-run:php-apache',
+    'gcr.io/$PROJECT_ID/laravel-cloud-run:entrypoint',
+    'gcr.io/$PROJECT_ID/laravel-cloud-run:cloud-build'
+]
