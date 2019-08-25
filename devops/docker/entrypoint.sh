@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
@@ -8,8 +8,7 @@ port=${PORT:-8080}
 
 if [[ "$role" = "app" ]]; then
 
-    sed -i "s/\$PORT/$port/g" /etc/nginx/nginx.conf
-    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+    docker-php-entrypoint apache2-foreground
 
 elif [[ "$role" = "worker" ]]; then
 
