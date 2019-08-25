@@ -60,7 +60,7 @@ COPY ./devops/docker/config/opcache.ini "$PHP_INI_DIR/conf.d/opcache.ini"
 #
 # Docker entrypoint
 # Rebuilt if our entrypoint script changes
-FROM php-apache as entrypoint
+FROM php-apache AS entrypoint
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
@@ -74,7 +74,7 @@ CMD ["/opt/bin/entrypoint.sh"]
 #
 # Application
 # Rebuilt if php source files change
-FROM entrypoint as application
+FROM entrypoint AS application
 
 COPY . /var/www/html
 COPY --from=composer-deps vendor /var/www/html/vendor/
