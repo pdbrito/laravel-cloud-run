@@ -46,48 +46,30 @@ RUN yarn production
 #
 # PHP, Nginx and Supervisord configuration
 # Rebuilt if configuration files change
-FROM php:7.3-fpm-alpine AS php-nginx
+FROM php:7.3-apache-stretch AS php-apache
 
 RUN docker-php-ext-install bcmath pcntl pdo pdo_mysql opcache
 
-RUN apk --no-cache add nginx supervisor fcgi
-
-# Configure supervisord
-COPY ./devops/docker/config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# Configure nginx
-COPY ./devops/docker/config/nginx.conf /etc/nginx/nginx.conf
-
-# Configure php-fpm
-COPY ./devops/docker/config/www.conf /usr/local/etc/php-fpm.d/zz-docker.conf
-
-# Configure php
-RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+RUN sed -i 's#/var/www/html#/var/www/html/public#g' /etc/apache2/sites-available/000-default.conf
+RUN sed -i 's/80/${PORT}/g' /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf
 
 # Configure opcache
 COPY ./devops/docker/config/opcache.ini "$PHP_INI_DIR/conf.d/opcache.ini"
-
-# Let supervisord start nginx & php-fpm
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
 
 #
 # Docker entrypoint
 # Rebuilt if our entrypoint script changes
-FROM php-nginx as entrypoint
+FROM php-apache as entrypoint
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
 COPY ./devops/docker/entrypoint.sh /opt/bin/entrypoint.sh
-COPY ./devops/docker/healthcheck.sh /opt/bin/healthcheck.sh
 
-RUN chmod +x /opt/bin/entrypoint.sh /opt/bin/healthcheck.sh
+RUN chmod +x /opt/bin/entrypoint.sh
 
 CMD ["/opt/bin/entrypoint.sh"]
-
-HEALTHCHECK --timeout=10s --interval=10s --start-period=5s \
-  CMD /opt/bin/healthcheck.sh
 
 #
 # Application
