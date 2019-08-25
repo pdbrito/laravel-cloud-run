@@ -50,7 +50,7 @@ FROM php:7.3-fpm-alpine AS php-nginx
 
 RUN docker-php-ext-install bcmath pcntl pdo pdo_mysql opcache
 
-RUN apk --no-cache add nginx supervisor curl
+RUN apk --no-cache add nginx supervisor fcgi
 
 # Configure supervisord
 COPY ./devops/docker/config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
@@ -80,10 +80,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY ./devops/docker/entrypoint.sh /opt/bin/entrypoint.sh
+COPY ./devops/docker/healthcheck.sh /opt/bin/healthcheck.sh
 
-RUN chmod +x /opt/bin/entrypoint.sh
+RUN chmod +x /opt/bin/entrypoint.sh /opt/bin/healthcheck.sh
 
 CMD ["/opt/bin/entrypoint.sh"]
+
+HEALTHCHECK --timeout=10s --interval=10s --start-period=5s \
+  CMD /opt/bin/healthcheck.sh
 
 #
 # Application
