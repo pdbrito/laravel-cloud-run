@@ -1,6 +1,6 @@
 steps:
     - name: 'gcr.io/cloud-builders/docker'
-      args: ['cat', '/etc/docker/daemon.json']
+      args: ['system', 'info']
       env: ['DOCKER_BUILDKIT=1']
     # build the container image
     - name: 'gcr.io/cloud-builders/docker'
