@@ -40,7 +40,7 @@ steps:
             '.'
         ]
         id: 'build-yarn-install'
-        waitFor: ['pull-yarn-install']
+        waitFor: ['pull-yarn-install','build-composer-deps']
 
     -   name: 'gcr.io/cloud-builders/docker'
         entrypoint: 'bash'
@@ -63,7 +63,7 @@ steps:
             '.'
         ]
         id: 'build-yarn-build'
-        waitFor: ['pull-yarn-build']
+        waitFor: ['pull-yarn-build','build-composer-deps','build-yarn-install']
 
     -   name: 'gcr.io/cloud-builders/docker'
         entrypoint: 'bash'
@@ -87,7 +87,7 @@ steps:
             '.'
         ]
         id: 'build-php-apache'
-        waitFor: ['pull-php-apache']
+        waitFor: ['pull-php-apache','build-yarn-build','build-composer-deps','build-yarn-install']
 
 
     -   name: 'gcr.io/cloud-builders/docker'
@@ -113,7 +113,7 @@ steps:
             '.'
         ]
         id: 'build-entrypoint'
-        waitFor: ['pull-entrypoint']
+        waitFor: ['pull-entrypoint','build-php-apache','build-yarn-build','build-composer-deps','build-yarn-install']
 
     -   name: 'gcr.io/cloud-builders/docker'
         args: [
@@ -128,7 +128,7 @@ steps:
             '.'
         ]
         id: 'build'
-        waitFor: ['build-entrypoint','build-yarn-build','build-composer-deps']
+        waitFor: ['build-entrypoint','build-php-apache','build-yarn-build','build-composer-deps','build-yarn-install']
 
     -   name: 'gcr.io/cloud-builders/docker'
         args: ['push', 'gcr.io/$PROJECT_ID/laravel-cloud-run:cloud-build']
