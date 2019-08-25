@@ -1,4 +1,7 @@
 steps:
+    - name: 'gcr.io/cloud-builders/docker'
+      args: ['cat', '/etc/docker/daemon.json']
+      env: ['DOCKER_BUILDKIT=1']
     # build the container image
     - name: 'gcr.io/cloud-builders/docker'
       args: ['build', '-f', 'devops/docker/Dockerfile', '-t', 'gcr.io/wonderkind-testing/laravel-cloud-run:cloud-build', '.']
