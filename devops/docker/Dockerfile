@@ -59,7 +59,7 @@ COPY ./devops/docker/config/supervisord.conf /etc/supervisor/conf.d/supervisord.
 COPY ./devops/docker/config/nginx.conf /etc/nginx/nginx.conf
 
 # Configure php-fpm
-COPY ./devops/docker/config/www.conf /usr/local/etc/php-fpm.d/www.conf
+COPY ./devops/docker/config/www.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
 # Configure php
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
