@@ -1,7 +1,7 @@
 #
 # PHP dependencies - composer install
 # Rebuilt if composer dependencies change
-FROM php:7.3-cli-alpine as composer
+FROM php:7.3-cli-alpine AS composer-deps
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer global require hirak/prestissimo
 
@@ -20,7 +20,7 @@ RUN composer install \
 #
 # JS dependencies - yarn install
 # Rebuilt if javascript dependencies change
-FROM node:lts-alpine as yarn-install
+FROM node:lts-alpine AS yarn-install
 
 WORKDIR /app
 
@@ -31,7 +31,7 @@ RUN yarn install
 #
 # JS build - yarn production
 # Rebuilt if javascript source files change
-FROM yarn-install as yarn-build
+FROM yarn-install AS yarn-build
 
 WORKDIR /app
 
@@ -46,15 +46,38 @@ RUN yarn production
 #
 # PHP, Nginx and Supervisord configuration
 # Rebuilt if configuration files change
-FROM trafex/alpine-nginx-php7:1.2.0 as php-nginx
-USER root
-RUN apk add --no-cache php7-pcntl php7-bcmath php7-pdo php7-pdo_mysql php7-tokenizer
+FROM php:7.3-fpm-alpine AS php-nginx
+
+RUN docker-php-ext-install bcmath pcntl pdo pdo_mysql opcache
+
+RUN apk --no-cache add nginx supervisor curl
+
+# Configure supervisord
+COPY ./devops/docker/config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Configure nginx
 COPY ./devops/docker/config/nginx.conf /etc/nginx/nginx.conf
 
+# Configure php-fpm
+COPY ./devops/docker/config/www.conf /usr/local/etc/php-fpm.d/www.conf
+
+# Configure php
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+# Configure opcache
+COPY ./devops/docker/config/opcache.ini "$PHP_INI_DIR/conf.d/opcache.ini"
+
+# Let supervisord start nginx & php-fpm
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+
+
 #
-# Application
-# Rebuilt if php source files change
-FROM php-nginx
+# Docker entrypoint
+# Rebuilt if our entrypoint script changes
+FROM php-nginx as entrypoint
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
 
 COPY ./devops/docker/entrypoint.sh /opt/bin/entrypoint.sh
 
@@ -62,15 +85,16 @@ RUN chmod +x /opt/bin/entrypoint.sh
 
 CMD ["/opt/bin/entrypoint.sh"]
 
+#
+# Application
+# Rebuilt if php source files change
+FROM entrypoint as application
+
 COPY . /var/www/html
-COPY --from=composer vendor /var/www/html/vendor/
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer-deps vendor /var/www/html/vendor/
 COPY --from=yarn-build /app/public/js /var/www/html/public/js/
 COPY --from=yarn-build /app/public/css /var/www/html/public/css/
 COPY --from=yarn-build /app/mix-manifest.json /var/www/html/mix-manifest.json
 
-RUN composer dump-autoload --optimize --classmap-authoritative \
-    && php artisan view:cache \
-    && chown -R nobody /var/www/html/storage/
-
-USER nobody
+RUN composer dump-autoload --optimize --classmap-authoritative --verbose \
+    && chown -R www-data /var/www/html/storage/
