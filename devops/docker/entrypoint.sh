@@ -8,6 +8,7 @@ port=${PORT:-8080}
 
 if [[ "$role" = "app" ]]; then
 
+    php /var/www/html/artisan migrate --force
     docker-php-entrypoint apache2-foreground
 
 elif [[ "$role" = "worker" ]]; then
