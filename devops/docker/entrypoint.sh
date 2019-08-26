@@ -4,7 +4,6 @@ set -e
 
 role=${CONTAINER_ROLE:-app}
 env=${APP_ENV:-production}
-port=${PORT:-8080}
 
 if [[ "$role" = "app" ]]; then
 
