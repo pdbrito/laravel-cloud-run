@@ -7,6 +7,21 @@ env=${APP_ENV:-production}
 
 if [[ "$role" = "app" ]]; then
 
+    #check if socket exists
+    FILE=/cloudsql/wonderkind-testing:europe-west4:development
+    if [[ -f "$FILE" ]]; then
+        echo "$FILE exist"
+    else
+        echo "$FILE does not exist"
+    fi
+
+    if [[ -f "/cloudsql/" ]]; then
+        ls -la /cloudsql/
+    else
+        echo "/cloudsql/ does not exist"
+    fi
+
+
     php /var/www/html/artisan migrate --force
     docker-php-entrypoint apache2-foreground
 
