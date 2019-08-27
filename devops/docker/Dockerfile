@@ -51,7 +51,12 @@ FROM php:7.3-apache-stretch AS php-apache
 RUN docker-php-ext-install bcmath pcntl pdo pdo_mysql opcache
 
 RUN sed -i 's#/var/www/html#/var/www/html/public#g' /etc/apache2/sites-available/000-default.conf
+
+#Allow listen port to be confiured at runtime with PORT env variable
 RUN sed -i 's/80/${PORT}/g' /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf
+
+# Configure php
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 # Configure opcache
 COPY ./devops/docker/config/opcache.ini "$PHP_INI_DIR/conf.d/opcache.ini"
