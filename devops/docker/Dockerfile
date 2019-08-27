@@ -61,9 +61,6 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 # Configure opcache
 COPY ./devops/docker/config/opcache.ini "$PHP_INI_DIR/conf.d/opcache.ini"
 
-# Configure pdo_mysql
-COPY ./devops/docker/config/pdo_mysql.ini "$PHP_INI_DIR/conf.d/pdo_mysql.ini"
-
 
 #
 # Docker entrypoint
