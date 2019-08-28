@@ -2,12 +2,12 @@ steps:
     # build the container image with cache
     - name: 'gcr.io/kaniko-project/executor:latest'
       args: ['--dockerfile=devops/docker/Dockerfile',
-             '--destination=eu.gcr.io/wonderkind-testing/laravel-cloud-run:cloud-build-kaniko',
+             '--destination=gcr.io/wonderkind-testing/laravel-cloud-run:cloud-build-kaniko',
              '--cache=true',
              '--cache-ttl=18h']
         # push the container image to Container Registry
     - name: 'gcr.io/cloud-builders/docker'
-      args: ['push', 'eu.gcr.io/wonderkind-testing/laravel-cloud-run:cloud-build-kaniko']
+      args: ['push', 'gcr.io/wonderkind-testing/laravel-cloud-run:cloud-build-kaniko']
         # Deploy container image to Cloud Run
     - name: 'gcr.io/cloud-builders/gcloud'
-      args: ['beta', 'run', 'deploy', 'laravel-cloud-run', '--image', 'eu.gcr.io/wonderkind-testing/laravel-cloud-run:cloud-build-kaniko', '--region', 'europe-west1','--platform', 'managed', '--quiet']
+      args: ['beta', 'run', 'deploy', 'laravel-cloud-run', '--image', 'gcr.io/wonderkind-testing/laravel-cloud-run:cloud-build-kaniko', '--region', 'europe-west1','--platform', 'managed', '--quiet']
