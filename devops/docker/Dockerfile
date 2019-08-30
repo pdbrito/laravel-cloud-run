@@ -44,16 +44,20 @@ COPY resources/js /app/resources/js/
 RUN yarn production
 
 #
-# PHP, Nginx and Supervisord configuration
+# PHP, Nginx and s6 configuration
 # Rebuilt if configuration files change
 FROM php:7.3-fpm-alpine AS php-nginx
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 RUN docker-php-ext-install bcmath pcntl pdo pdo_mysql opcache
 
-RUN apk --no-cache add nginx supervisor fcgi
+RUN apk --no-cache add nginx
 
-# Configure supervisord
-COPY ./devops/docker/config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+ADD https://raw.githubusercontent.com/raphaelahrens/wait-for-it/master/wait-for-it.sh /bin/wait-for-it.sh
+RUN chmod +x /bin/wait-for-it.sh
+
+ADD https://github.com/just-containers/s6-overlay/releases/download/v1.21.1.1/s6-overlay-amd64.tar.gz /tmp/
+RUN tar xzf /tmp/s6-overlay-amd64.tar.gz -C /
 
 # Configure nginx
 COPY ./devops/docker/config/nginx.conf /etc/nginx/nginx.conf
@@ -67,30 +71,25 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 # Configure opcache
 COPY ./devops/docker/config/opcache.ini "$PHP_INI_DIR/conf.d/opcache.ini"
 
-# Let supervisord start nginx & php-fpm
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Copy NGINX service script
+COPY ./devops/docker/scripts/start-nginx.sh /etc/services.d/nginx/run
+RUN chmod 755 /etc/services.d/nginx/run
 
-
-#
-# Docker entrypoint
-# Rebuilt if our entrypoint script changes
-FROM php-nginx as entrypoint
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Copy PHP-FPM service script
+COPY ./devops/docker/scripts/start-fpm.sh /etc/services.d/php_fpm/run
+RUN chmod 755 /etc/services.d/php_fpm/run \
+    && ln -sf /dev/stdout /var/log/nginx/access.log \
+	&& ln -sf /dev/stderr /var/log/nginx/error.log
 
 WORKDIR /var/www/html
 
-COPY ./devops/docker/scripts/entrypoint.sh /opt/bin/entrypoint.sh
-
-RUN chmod +x /opt/bin/entrypoint.sh /opt/bin/healthcheck.sh
-
-RUN chmod +x /opt/bin/entrypoint.sh
-CMD ["/opt/bin/entrypoint.sh"]
-
+ENTRYPOINT ["/init"]
+CMD []
 
 #
 # Application
 # Rebuilt if php source files change
-FROM entrypoint as application
+FROM php-nginx as application
 
 COPY . /var/www/html
 COPY --from=composer-deps vendor /var/www/html/vendor/
