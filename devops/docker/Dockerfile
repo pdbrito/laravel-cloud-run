@@ -80,14 +80,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY ./devops/docker/scripts/entrypoint.sh /opt/bin/entrypoint.sh
-COPY ./devops/docker/scripts/healthcheck.sh /opt/bin/healthcheck.sh
 
 RUN chmod +x /opt/bin/entrypoint.sh /opt/bin/healthcheck.sh
 
+RUN chmod +x /opt/bin/entrypoint.sh
 CMD ["/opt/bin/entrypoint.sh"]
 
-HEALTHCHECK --timeout=10s --interval=10s --start-period=5s \
-  CMD /opt/bin/healthcheck.sh
 
 #
 # Application
