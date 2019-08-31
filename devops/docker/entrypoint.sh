@@ -4,10 +4,13 @@ set -e
 
 role=${CONTAINER_ROLE:-app}
 env=${APP_ENV:-production}
+migrate=${DB_MIGRATE:-0}
 
 if [[ "$role" = "app" ]]; then
 
-    php /var/www/html/artisan migrate --force
+    if [[ "$migrate" = "1" ]]; then
+        php /var/www/html/artisan migrate --force
+    fi
     docker-php-entrypoint apache2-foreground
 
 elif [[ "$role" = "worker" ]]; then
