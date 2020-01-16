@@ -1,7 +1,7 @@
 #
 # PHP dependencies - composer install
 # Rebuilt if composer dependencies change
-FROM php:7.3-cli-alpine AS composer-deps
+FROM php:7.4-cli-alpine AS composer-deps
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer global require hirak/prestissimo
 
@@ -44,23 +44,29 @@ COPY resources/js /app/resources/js/
 RUN yarn production
 
 #
-# PHP, Nginx and Supervisord configuration
+# PHP, Nginx and s6 configuration
 # Rebuilt if configuration files change
-FROM php:7.3-apache-stretch AS php-apache
+FROM php:7.4-fpm-alpine AS php-nginx
+
+ENV S6RELEASE v1.22.1.0
+ENV S6URL     https://github.com/just-containers/s6-overlay/releases/download/
+ENV S6_KEEP_ENV 1
 
 RUN docker-php-ext-install bcmath pcntl pdo pdo_mysql opcache
 
-RUN sed -i 's#/var/www/html#/var/www/html/public#g' /etc/apache2/sites-available/000-default.conf
+RUN apk --no-cache add nginx
 
-#Allow listen port to be confiured at runtime with PORT env variable
-RUN sed -i 's/80/${PORT}/g' /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf
+# Configure nginx
+COPY ./devops/docker/config/nginx.conf /etc/nginx/nginx.conf
+
+# Configure php-fpm
+COPY ./devops/docker/config/www.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
 # Configure php
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 # Configure opcache
 COPY ./devops/docker/config/opcache.ini "$PHP_INI_DIR/conf.d/opcache.ini"
-
 
 #
 # Docker entrypoint

@@ -1,32 +1,12 @@
-#!/bin/bash
+#!/bin/sh
+set -euxo pipefail
 
-set -e
-
-role=${CONTAINER_ROLE:-app}
 env=${APP_ENV:-production}
 migrate=${DB_MIGRATE:-0}
 
-if [[ "$role" = "app" ]]; then
+sed -i "s/\$PORT/$port/g" /etc/nginx/nginx.conf
 
-    if [[ "$migrate" = "1" ]]; then
-        php /var/www/html/artisan migrate --force
-    fi
-    docker-php-entrypoint apache2-foreground
-
-elif [[ "$role" = "worker" ]]; then
-
-    echo "Running the worker..."
-    php /var/www/html/artisan horizon
-
-elif [[ "$role" = "scheduler" ]]; then
-
-    while [[ true ]]
-    do
-      php /var/www/html/artisan schedule:run --verbose --no-interaction &
-      sleep 60
-    done
-
-else
-    echo "Could not match the container role \"$role\""
-    exit 1
-fi
+PID_FILE=/tmp/php-fpm.pid
+php-fpm -g $PID_FILE -D
+while [ ! -f $PID_FILE ]; do sleep 0.1; done
+nginx -g 'daemon off;'
