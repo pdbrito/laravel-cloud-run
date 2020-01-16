@@ -54,21 +54,7 @@ ENV S6_KEEP_ENV 1
 
 RUN docker-php-ext-install bcmath pcntl pdo pdo_mysql opcache
 
-RUN apk --no-cache add gnupg nginx fcgi \
-# Install s6 overlay for service management
-    && wget -qO - https://keybase.io/justcontainers/key.asc | gpg2 --import - \
-    && cd /tmp \
-    && wget -q ${S6URL}${S6RELEASE}/s6-overlay-amd64.tar.gz.sig \
-    && wget -q ${S6URL}${S6RELEASE}/s6-overlay-amd64.tar.gz \
-    && gpg2 --verify s6-overlay-amd64.tar.gz.sig \
-    && tar -xzf s6-overlay-amd64.tar.gz -C / \
-# Clean up
-    && rm -rf "${GNUPGHOME}" /tmp/* \
-    && apk del gnupg
-
-
-# Configure s6
-COPY ./devops/docker/config/services.d /etc/services.d
+RUN apk --no-cache add nginx
 
 # Configure nginx
 COPY ./devops/docker/config/nginx.conf /etc/nginx/nginx.conf
