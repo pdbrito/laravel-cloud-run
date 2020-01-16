@@ -1,5 +1,4 @@
 #!/bin/sh
-
 set -euxo pipefail
 
 env=${APP_ENV:-production}

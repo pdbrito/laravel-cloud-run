@@ -80,7 +80,6 @@ COPY ./devops/docker/entrypoint.sh /opt/bin/entrypoint.sh
 
 RUN chmod +x /opt/bin/entrypoint.sh
 
-# Let s6 start nginx & php-fpm
 CMD ["/opt/bin/entrypoint.sh"]
 
 #
