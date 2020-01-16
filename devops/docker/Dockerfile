@@ -1,7 +1,7 @@
 #
 # PHP dependencies - composer install
 # Rebuilt if composer dependencies change
-FROM php:7.3-cli-alpine AS composer-deps
+FROM php:7.4-cli-alpine AS composer-deps
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer global require hirak/prestissimo
 
@@ -44,16 +44,31 @@ COPY resources/js /app/resources/js/
 RUN yarn production
 
 #
-# PHP, Nginx and Supervisord configuration
+# PHP, Nginx and s6 configuration
 # Rebuilt if configuration files change
-FROM php:7.3-fpm-alpine AS php-nginx
+FROM php:7.4-fpm-alpine AS php-nginx
+
+ENV S6RELEASE v1.22.1.0
+ENV S6URL     https://github.com/just-containers/s6-overlay/releases/download/
+ENV S6_KEEP_ENV 1
 
 RUN docker-php-ext-install bcmath pcntl pdo pdo_mysql opcache
 
-RUN apk --no-cache add nginx supervisor fcgi
+RUN apk --no-cache add gnupg nginx fcgi \
+# Install s6 overlay for service management
+    && wget -qO - https://keybase.io/justcontainers/key.asc | gpg2 --import - \
+    && cd /tmp \
+    && wget -q ${S6URL}${S6RELEASE}/s6-overlay-amd64.tar.gz.sig \
+    && wget -q ${S6URL}${S6RELEASE}/s6-overlay-amd64.tar.gz \
+    && gpg2 --verify s6-overlay-amd64.tar.gz.sig \
+    && tar -xzf s6-overlay-amd64.tar.gz -C / \
+# Clean up
+    && rm -rf "${GNUPGHOME}" /tmp/* \
+    && apk del gnupg
 
-# Configure supervisord
-COPY ./devops/docker/config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Configure s6
+COPY ./devops/docker/config/services.d /etc/services.d
 
 # Configure nginx
 COPY ./devops/docker/config/nginx.conf /etc/nginx/nginx.conf
@@ -67,10 +82,6 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 # Configure opcache
 COPY ./devops/docker/config/opcache.ini "$PHP_INI_DIR/conf.d/opcache.ini"
 
-# Let supervisord start nginx & php-fpm
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
-
-
 #
 # Docker entrypoint
 # Rebuilt if our entrypoint script changes
@@ -81,6 +92,9 @@ WORKDIR /var/www/html
 
 COPY ./devops/docker/entrypoint.sh /opt/bin/entrypoint.sh
 
+RUN chmod +x /opt/bin/entrypoint.sh
+
+# Let s6 start nginx & php-fpm
 CMD ["/opt/bin/entrypoint.sh"]
 
 #
