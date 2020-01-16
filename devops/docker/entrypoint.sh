@@ -2,7 +2,7 @@
 set -euxo pipefail
 
 env=${APP_ENV:-production}
-port=${PORT:-8080}
+migrate=${DB_MIGRATE:-0}
 
 sed -i "s/\$PORT/$port/g" /etc/nginx/nginx.conf
 

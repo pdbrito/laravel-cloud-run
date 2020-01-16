@@ -71,7 +71,7 @@ COPY ./devops/docker/config/opcache.ini "$PHP_INI_DIR/conf.d/opcache.ini"
 #
 # Docker entrypoint
 # Rebuilt if our entrypoint script changes
-FROM php-nginx as entrypoint
+FROM php-apache as entrypoint
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
